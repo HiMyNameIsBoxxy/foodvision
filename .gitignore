@@ -1,0 +1,19 @@
+# Ignore data
+data/
+*.zip
+*.tar.gz
+
+# Ignore model weights
+models/*.pth
+models/*.pt
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual env
+venv/
+.env/
+
+# Jupyter
+.ipynb_checkpoints/
