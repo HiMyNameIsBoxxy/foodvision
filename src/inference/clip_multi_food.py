@@ -226,6 +226,8 @@ def analyze_food_image(image_bytes: bytes) -> Dict:
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     emb = encode_image(image)
 
+    ing_res = []
+
     # 1) Predict food label from CLIP
     food_res = predict_food_fast(emb)
     best_prompt, best_score = food_res[0]
@@ -233,6 +235,10 @@ def analyze_food_image(image_bytes: bytes) -> Dict:
 
     # LAYER 1 — Direct food-level calorie match
     mk, cal, ms = match_food_calories(predicted_food)
+
+    # ALWAYS compute ingredients even when food_match hits
+    ing_res = analyze_ingredients_fast(emb)
+
     if mk:
         return {
             "food": predicted_food,
@@ -241,8 +247,9 @@ def analyze_food_image(image_bytes: bytes) -> Dict:
             "match_score": ms,
             "matched_key_norm": mk,
             "calories_per_100g": cal,
-            "ingredients": [],
+            "ingredients": ing_res,
         }
+
 
     # LAYER 2 — Ingredient-based estimation
     ing_res = analyze_ingredients_fast(emb)

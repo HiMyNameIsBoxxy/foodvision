@@ -107,24 +107,3 @@ Analyze an uploaded food image:
 Installed automatically inside Docker.
 
 ---
-
-## Build PTH Files (Optional)
-If rebuilding from raw `.json` / `.npy`:
-
-```
-python build_pth.py
-```
-
-Generates:
-
-- `calories.pth`
-- `food_embeds.pth`
-- `ingredient_meta.pth`
-- `ingredient_chunks/*.pth`
-
----
-
-## License
-MIT License
-
----
