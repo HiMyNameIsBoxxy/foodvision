@@ -34,6 +34,14 @@ Supports 3‑layer calorie inference:
 
 Uses **fuzzy string matching** (RapidFuzz) over normalized calorie keys.
 
+
+## Dataset Used
+
+All data in this project are sourced from the :contentReference[oaicite:0]{index=0} (USDA) FoodData Central dataset, downloaded from:  
+[https://fdc.nal.usda.gov/download-datasets](https://fdc.nal.usda.gov/download-datasets)  
+
+The raw files were derived from the USDA data and then converted into optimized `.pth` files for offline inference.
+
 ---
 
 
