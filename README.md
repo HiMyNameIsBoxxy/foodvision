@@ -36,27 +36,6 @@ Uses **fuzzy string matching** (RapidFuzz) over normalized calorie keys.
 
 ---
 
-## Project Structure
-
-```
-data/
-    calories.pth
-    food_embeds.pth
-    ingredient_meta.pth
-    ingredient_embeds_00.pth
-    ingredient_embeds_01.pth
-    ...
-    ingredient_embeds_12.pth
-src/
-    api/
-        app.py
-    inference/
-        clip_multi_food.py
-Dockerfile
-README.md
-```
-
----
 
 ## Run With Docker
 
