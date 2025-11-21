@@ -1,11 +1,11 @@
-# 🍽️ FoodVision — CLIP‑Powered Food & Calorie Estimation (FastAPI + Docker)
+# FoodVision — CLIP‑Powered Food & Calorie Estimation (FastAPI + Docker)
 
 This project provides a **production‑grade FastAPI service** that performs:
 
-- **Food recognition** using CLIP embeddings  
+- **Food recognition** 
 - **Ingredient recognition**  
-- **Calorie estimation** using fuzzy matching over a large USDA-like database  
-- All embeddings stored in efficient `.pth` chunks  
+- **Calorie estimation** 
+- All embeddings stored in`.pth` chunks  
 - Fully packaged and deployable with **Docker**
 - No internet connection required at runtime
 
