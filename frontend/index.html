@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FoodVision CLIP – Calorie Estimator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      background: #f7fafc;
+    }
+    h1 {
+      margin-bottom: 0.25rem;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-bottom: 1.5rem;
+    }
+    #preview {
+      max-width: 300px;
+      max-height: 300px;
+      border-radius: 8px;
+      object-fit: contain;
+      border: 1px solid #e2e8f0;
+      display: none;
+      margin-top: 0.75rem;
+    }
+    button {
+      margin-top: 0.75rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: #2563eb;
+      color: white;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    #resultsTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    #resultsTable th, #resultsTable td {
+      padding: 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+    }
+    #status {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+    }
+    .error {
+      color: #b91c1c;
+    }
+    .success {
+      color: #047857;
+    }
+    .flex {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .flex > div {
+      flex: 1 1 250px;
+    }
+  </style>
+</head>
+<body>
+  <h1>FoodVision CLIP</h1>
+  <p>Upload a food image to get ingredient predictions and calories.</p>
+
+  <div class="card">
+    <label for="fileInput"><strong>Select an image:</strong></label><br />
+    <input type="file" id="fileInput" accept="image/*" />
+    <br />
+    <img id="preview" alt="Image preview" />
+
+    <br />
+    <button id="predictBtn" disabled>Predict</button>
+    <div id="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="flex">
+      <div>
+        <h2>Predictions</h2>
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody">
+            <!-- Rows will be injected here -->
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h2>Model Image</h2>
+        <img id="resultImage" alt="Returned by model" style="max-width:100%; border-radius:8px; border:1px solid #e2e8f0; display:none;" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const API_URL = "http://127.0.0.1:8000/predict";
+
+  const fileInput   = document.getElementById("fileInput");
+  const preview     = document.getElementById("preview");
+  const predictBtn  = document.getElementById("predictBtn");
+  const statusDiv   = document.getElementById("status");
+  const resultsBody = document.getElementById("resultsBody");
+  const resultImage = document.getElementById("resultImage");
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      preview.style.display = "none";
+      predictBtn.disabled = true;
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+    predictBtn.disabled = false;
+    statusDiv.textContent = "";
+  });
+
+  predictBtn.addEventListener("click", async () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      statusDiv.textContent = "Please select an image first.";
+      statusDiv.className = "error";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    predictBtn.disabled = true;
+    statusDiv.textContent = "Predicting...";
+    statusDiv.className = "";
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("API response:", data);
+
+      // 🧠 sacamos el objeto prediction que viene del backend
+      const p = data.prediction || {};
+
+      // limpiamos tabla
+      resultsBody.innerHTML = "";
+
+      // Construimos filas "a mano" en el orden que nos interesa
+      const rows = [
+        { name: "food",            value: p.food },
+        { name: "confidence",      value: p.confidence,       type: "prob" },
+        { name: "calorie_source",  value: p.calorie_source },
+        { name: "matched_key_norm",value: p.matched_key_norm },
+        { name: "match_score",     value: p.match_score,      type: "prob" },
+        { name: "calories_per_100g", value: p.calories_per_100g, type: "calories" },
+                {
+            name: "ingredients",
+            value: Array.isArray(p.ingredients)
+                ? p.ingredients
+                    .map(ing => {
+                    // intenta varias keys comunes
+                    if (typeof ing === "string") return ing;
+                    return (
+                        ing.name ||
+                        ing.ingredient ||
+                        ing.label ||
+                        JSON.stringify(ing)
+                    );
+                    })
+                    .join(", ")
+                : p.ingredients,
+            },
+      ];
+
+      rows.forEach((row, index) => {
+        const tr = document.createElement("tr");
+
+        const tdIndex = document.createElement("td");
+        tdIndex.textContent = index + 1;
+
+        const tdName = document.createElement("td");
+        tdName.textContent = row.name;
+
+        const tdScore = document.createElement("td");
+        let display = "-";
+
+        if (row.value != null) {
+          if (row.type === "prob" && typeof row.value === "number") {
+            // Si viene entre 0 y 1, lo pasamos a %
+            // Si ya viene como 75, lo dejamos en 75
+            let v = row.value;
+            if (v <= 1) {
+                v = v * 100;
+            }
+            display = v.toFixed(2) + " %";
+            } else if (row.type === "calories" && typeof row.value === "number") {
+            display = row.value.toFixed(0) + " kcal";
+          } else {
+            display = String(row.value);
+          }
+        }
+
+        tdScore.textContent = display;
+
+        tr.appendChild(tdIndex);
+        tr.appendChild(tdName);
+        tr.appendChild(tdScore);
+        resultsBody.appendChild(tr);
+      });
+
+      // imagen devuelta por el modelo
+      if (data.image_base64) {
+        resultImage.src = "data:image/jpeg;base64," + data.image_base64;
+        resultImage.style.display = "block";
+      } else {
+        resultImage.style.display = "none";
+      }
+
+      statusDiv.textContent = "Prediction completed.";
+      statusDiv.className = "success";
+    } catch (err) {
+      console.error(err);
+      statusDiv.textContent = "Error calling API: " + err.message;
+      statusDiv.className = "error";
+    } finally {
+      predictBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
