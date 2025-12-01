@@ -20,6 +20,7 @@ WORKDIR /app
 # Copy all project files TO container
 COPY ./src /app/src
 COPY ./data /app/data
+COPY ./frontend /app/frontend    
 
 # Expose FastAPI port
 EXPOSE 8000

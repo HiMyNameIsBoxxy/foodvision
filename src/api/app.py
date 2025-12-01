@@ -1,6 +1,8 @@
 import base64
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+
 
 from src.inference.analyze import analyze_food_image
 
@@ -24,3 +26,5 @@ async def predict(file: UploadFile = File(...)):
     }
 
     return JSONResponse(response)
+# Serve the frontend
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
